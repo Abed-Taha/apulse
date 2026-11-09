@@ -1,0 +1,23 @@
+node_modules
+**/node_modules
+
+.next
+**/.next
+
+dist
+**/dist
+
+.git
+.gitignore
+
+.env
+.env.*
+!.env.example
+
+coverage
+*.log
+
+.DS_Store
+
+# pnpm store
+.pnpm-store/
