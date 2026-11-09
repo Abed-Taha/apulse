@@ -205,7 +205,14 @@ settings:
 
 importers:
 
-  .: {}
+  .:
+    devDependencies:
+      husky:
+        specifier: ^9.1.7
+        version: 9.1.7
+      prettier:
+        specifier: ^3.9.10
+        version: 3.9.10
 
   apps/api:
     dependencies:
@@ -258,9 +265,6 @@ importers:
       oxlint-tsgolint:
         specifier: ^7.0.2001
         version: 7.0.2006
-      prettier:
-        specifier: ^3.4.2
-        version: 3.9.10
       source-map-support:
         specifier: ^0.5.21
         version: 0.5.21
@@ -2488,6 +2492,11 @@ packages:
   http-errors@2.0.1:
     resolution: {integrity: sha512-4FbRdAX+bSdmo4AUFuS0WNiPz8NgFt+r8ThgNWmlrjQjt1Q7ZR9+zTlce2859x4KSXrwIsaeTqDoKQmtP8pLmQ==}
     engines: {node: '>= 0.8'}
+
+  husky@9.1.7:
+    resolution: {integrity: sha512-5gs5ytaNjBrh5Ow3zrvdUUY+0VxIuWVL4i9irt6friV+BqdCfmV11CQTWMiBYWHbXhco+J1kHfTOUkePhCDvMA==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   iconv-lite@0.4.24:
     resolution: {integrity: sha512-v3MXnZAcvnywkTUEZomIActle7RXXeedOR31wwl7VlyoXO4Qi9arvSenNQWne1TcRwhCL1HwLI21bEqdpj8/rA==}
@@ -5919,6 +5928,8 @@ snapshots:
       setprototypeof: 1.2.0
       statuses: 2.0.2
       toidentifier: 1.0.1
+
+  husky@9.1.7: {}
 
   iconv-lite@0.4.24:
     dependencies:

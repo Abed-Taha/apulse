@@ -15,7 +15,13 @@
     "docker:prod:stop": "docker compose --env-file .env -f docker/docker-compose.prod.yml stop",
     "docker:prod:down": "docker compose --env-file .env -f docker/docker-compose.prod.yml down",
     "docker:prod:restart": "docker compose --env-file .env -f docker/docker-compose.prod.yml restart",
-    "docker:prod:logs": "docker compose --env-file .env -f docker/docker-compose.prod.yml logs -f"
+    "docker:prod:logs": "docker compose --env-file .env -f docker/docker-compose.prod.yml logs -f",
+    "lint": "pnpm --filter ./apps/api lint && pnpm --filter ./apps/web lint",
+    "typecheck": "pnpm --filter ./apps/api typecheck && pnpm --filter ./apps/web typecheck",
+    "check": "pnpm lint && pnpm typecheck && pnpm format:check",
+    "format": "prettier --write . --ignore-path .prettierignore",
+    "format:check": "prettier --check . --ignore-path .prettierignore",
+    "prepare": "husky"
   },
   "keywords": [],
   "author": "",
@@ -27,5 +33,9 @@
       "onFail": "download"
     }
   },
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "prettier": "^3.9.10"
+  }
 }
