@@ -4,7 +4,18 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "docker:dev": "docker compose --env-file .env -f docker/docker-compose.dev.yml up --build",
+    "docker:dev:start": "docker compose --env-file .env -f docker/docker-compose.dev.yml up -d",
+    "docker:dev:stop": "docker compose --env-file .env -f docker/docker-compose.dev.yml stop",
+    "docker:dev:down": "docker compose --env-file .env -f docker/docker-compose.dev.yml down",
+    "docker:dev:restart": "docker compose --env-file .env -f docker/docker-compose.dev.yml restart",
+    "docker:dev:logs": "docker compose --env-file .env -f docker/docker-compose.dev.yml logs -f",
+    "docker:prod": "docker compose --env-file .env -f docker/docker-compose.prod.yml up -d --build",
+    "docker:prod:start": "docker compose --env-file .env -f docker/docker-compose.prod.yml up -d",
+    "docker:prod:stop": "docker compose --env-file .env -f docker/docker-compose.prod.yml stop",
+    "docker:prod:down": "docker compose --env-file .env -f docker/docker-compose.prod.yml down",
+    "docker:prod:restart": "docker compose --env-file .env -f docker/docker-compose.prod.yml restart",
+    "docker:prod:logs": "docker compose --env-file .env -f docker/docker-compose.prod.yml logs -f"
   },
   "keywords": [],
   "author": "",
