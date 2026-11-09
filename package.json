@@ -21,6 +21,7 @@
     "check": "pnpm lint && pnpm typecheck && pnpm format:check",
     "format": "prettier --write . --ignore-path .prettierignore",
     "format:check": "prettier --check . --ignore-path .prettierignore",
+    "build": "pnpm --filter ./apps/api build && pnpm --filter ./apps/web build",
     "prepare": "husky"
   },
   "keywords": [],
