@@ -21,3 +21,7 @@ coverage/
 # Environment
 .env
 .env.*
+
+# Next.js generated files
+**/next-env.d.ts
+**/.next/
