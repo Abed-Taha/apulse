@@ -1,0 +1,42 @@
+{
+  "name": "apulse",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "docker:dev": "docker compose --env-file .env -f docker/docker-compose.dev.yml up --build",
+    "docker:dev:start": "docker compose --env-file .env -f docker/docker-compose.dev.yml up -d",
+    "docker:dev:stop": "docker compose --env-file .env -f docker/docker-compose.dev.yml stop",
+    "docker:dev:down": "docker compose --env-file .env -f docker/docker-compose.dev.yml down",
+    "docker:dev:restart": "docker compose --env-file .env -f docker/docker-compose.dev.yml restart",
+    "docker:dev:logs": "docker compose --env-file .env -f docker/docker-compose.dev.yml logs -f",
+    "docker:prod": "docker compose --env-file .env -f docker/docker-compose.prod.yml up -d --build",
+    "docker:prod:start": "docker compose --env-file .env -f docker/docker-compose.prod.yml up -d",
+    "docker:prod:stop": "docker compose --env-file .env -f docker/docker-compose.prod.yml stop",
+    "docker:prod:down": "docker compose --env-file .env -f docker/docker-compose.prod.yml down",
+    "docker:prod:restart": "docker compose --env-file .env -f docker/docker-compose.prod.yml restart",
+    "docker:prod:logs": "docker compose --env-file .env -f docker/docker-compose.prod.yml logs -f",
+    "lint": "pnpm --filter ./apps/api lint && pnpm --filter ./apps/web lint",
+    "typecheck": "pnpm --filter ./apps/api typecheck && pnpm --filter ./apps/web typecheck",
+    "check": "pnpm lint && pnpm typecheck && pnpm format:check",
+    "format": "prettier --write . --ignore-path .prettierignore",
+    "format:check": "prettier --check . --ignore-path .prettierignore",
+    "build": "pnpm --filter ./apps/api build && pnpm --filter ./apps/web build",
+    "prepare": "husky"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "11.20.0",
+      "onFail": "download"
+    }
+  },
+  "type": "module",
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "prettier": "^3.9.10"
+  }
+}

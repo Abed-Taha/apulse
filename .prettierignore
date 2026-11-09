@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Lockfiles
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+coverage/
+
+# Generated files
+*.min.js
+*.min.css
+
+# Environment
+.env
+.env.*
+
+# Next.js generated files
+**/next-env.d.ts
+**/.next/
