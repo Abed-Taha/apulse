@@ -5,6 +5,8 @@ import { createObserveModule } from '@nestjs/observe';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { StorageModule } from './storage/storage.module.js';
+import { resolve } from 'node:path';
+import { CoreModules } from './core/modules/core.modules.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -12,7 +14,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env',
+      envFilePath: resolve(process.cwd(), '../../.env'),
     }),
 
     ObserveModule.forRoot({
@@ -22,6 +24,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     }),
 
     StorageModule,
+    CoreModules,
   ],
   controllers: [AppController],
   providers: [AppService],

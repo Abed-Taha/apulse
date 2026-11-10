@@ -19,8 +19,10 @@ export function getStorageConfig(): StorageConfig {
     port,
     useSSL: process.env.MINIO_USE_SSL === 'true',
 
-    accessKey: process.env.MINIO_ACCESS_KEY ?? '',
-    secretKey: process.env.MINIO_SECRET_KEY ?? '',
+    accessKey:
+      process.env.MINIO_ACCESS_KEY ?? process.env.MINIO_ROOT_USER ?? '',
+    secretKey:
+      process.env.MINIO_SECRET_KEY ?? process.env.MINIO_ROOT_PASSWORD ?? '',
 
     bucket: process.env.MINIO_BUCKET ?? 'apulse-images',
     region: process.env.MINIO_REGION ?? 'us-east-1',
@@ -34,7 +36,9 @@ export function getStorageConfig(): StorageConfig {
   }
 
   if (!config.accessKey || !config.secretKey) {
-    throw new Error('MinIO credentials are required');
+    throw new Error(
+      'MinIO credentials are required (MINIO_ACCESS_KEY/MINIO_SECRET_KEY or MINIO_ROOT_USER/MINIO_ROOT_PASSWORD)',
+    );
   }
 
   if (!config.bucket) {
