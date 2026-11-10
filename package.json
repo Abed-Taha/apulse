@@ -37,6 +37,13 @@
   "type": "module",
   "devDependencies": {
     "husky": "^9.1.7",
-    "prettier": "^3.9.10"
+    "prettier": "^3.9.10",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0"
+  },
+  "dependencies": {
+    "@nestjs/typeorm": "^12.0.3",
+    "pg": "^8.23.1",
+    "typeorm": "^1.1.2"
   }
 }
