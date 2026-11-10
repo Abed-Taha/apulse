@@ -7,6 +7,7 @@ import { AppService } from './app.service.js';
 import { StorageModule } from './storage/storage.module.js';
 import { resolve } from 'node:path';
 import { CoreModules } from './core/modules/core.modules.js';
+
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
 @Module({
