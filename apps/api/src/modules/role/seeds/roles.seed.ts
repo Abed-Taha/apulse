@@ -2,40 +2,9 @@ import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import { Role } from '../entities/role.entity.js';
+import { DEFAULT_ROLES } from '@apulse/shared';
 
-const defaultRoles = [
-  {
-    name: 'Super Admin',
-    code: 'super_admin',
-    description: 'Full access to all system features.',
-  },
-  {
-    name: 'Admin',
-    code: 'admin',
-    description: 'Administrative access to the system.',
-  },
-  {
-    name: 'Sales Manager',
-    code: 'sales_manager',
-    description: 'Manages sales operations and employees.',
-  },
-  {
-    name: 'Employee',
-    code: 'employee',
-    description: 'Standard internal employee access.',
-  },
-  {
-    name: 'Customer',
-    code: 'customer',
-    description: 'Customer account access.',
-  },
-  {
-    name: 'Lead',
-    code: 'leads',
-    description: 'Potential customer who has not yet converted.',
-  },
-];
+import { Role } from '../entities/role.entity.js';
 
 @Injectable()
 export class RolesSeed implements OnApplicationBootstrap {
@@ -47,7 +16,7 @@ export class RolesSeed implements OnApplicationBootstrap {
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
-    for (const role of defaultRoles) {
+    for (const role of DEFAULT_ROLES) {
       await this.roleRepository.upsert(role, ['code']);
     }
 

@@ -5,7 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import type { AuthenticatedUser } from '@shared/types/authenticated-user/authenticated-user.js';
+import type { AuthenticatedUser } from '@apulse/shared';
 
 import { ROLES_KEY } from '../decorators/roles.decorator.js';
 
