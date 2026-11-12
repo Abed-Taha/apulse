@@ -14,6 +14,7 @@ import { NotificationModule } from '../../modules/notification/notification.modu
 import { PaymentModule } from '../../modules/payment/payment.module.js';
 import { VisitorModule } from '../../modules/visitor/visitor.module.js';
 import { AnalyticsModule } from '../../modules/analytics/analytics.module.js';
+import { AuthModule } from '../../modules/auth/auth.module.js';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { AnalyticsModule } from '../../modules/analytics/analytics.module.js';
     PaymentModule,
     VisitorModule,
     AnalyticsModule,
+    AuthModule,
   ],
 })
 export class CoreModules {}
