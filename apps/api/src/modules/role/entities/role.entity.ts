@@ -6,8 +6,10 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
+import type { Role as SharedRole, RoleCode } from '@apulse/shared';
+
 @Entity('roles')
-export class Role {
+export class Role implements SharedRole {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -15,7 +17,7 @@ export class Role {
   name: string;
 
   @Column({ unique: true })
-  code: string;
+  code: RoleCode;
 
   @Column({ type: 'text', nullable: true })
   description: string | null;

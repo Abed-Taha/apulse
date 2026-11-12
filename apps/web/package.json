@@ -12,6 +12,7 @@
     "format:check": "prettier --check . --ignore-path ../../.prettierignore"
   },
   "dependencies": {
+    "@apulse/shared": "workspace:*",
     "next": "16.4.5",
     "react": "19.3.0",
     "react-dom": "19.3.0"
