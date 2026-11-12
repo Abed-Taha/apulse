@@ -1,3 +1,5 @@
+import type { Permission } from '../permission/permission.js';
+
 export declare const RoleCode: {
   readonly SUPER_ADMIN: 'super_admin';
   readonly ADMIN: 'admin';
@@ -16,6 +18,7 @@ export interface Role {
   description: string | null;
   createdAt: Date;
   updatedAt: Date;
+  permissions?: Permission[];
 }
 
 export type DefaultRole = Pick<Role, 'name' | 'code' | 'description'>;

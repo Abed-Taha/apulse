@@ -30,8 +30,8 @@ Apulse is designed to streamline commerce, order processing, and administrative 
 
 ## Main Features
 
-- **Authentication & RBAC**: Stateless JWT authentication with role-based route protection (`JwtAuthGuard`, `RolesGuard`). Seeded system roles include Super Admin, Admin, Sales Manager, Employee, Customer, and Leads.
-- **User & Permission Management**: Fine-grained user profiles and custom authorization permissions.
+- **Authentication, RBAC & Domain Permissions**: Stateless JWT authentication with role-based and domain-level route protection (`JwtAuthGuard`, `RolesGuard`, `PermissionsGuard`, `@RequirePermissions`). Seeded system roles include Super Admin, Admin, Sales Manager, Employee, Customer, and Leads. Seeded domain permissions govern module-level access.
+- **User & Permission Management**: Fine-grained user profiles, domain permissions (`PermissionCode`), and custom authorization policies. Roles can be assigned multiple domain permissions.
 - **Product & Category Catalog**: Hierarchical product categories, item specifications, and customer product favorites.
 - **Cart & Order Processing**: Dynamic shopping cart operations and complete order fulfillment workflows with line items.
 - **Offers & Promotions**: Order-level and product-level discount structures.
@@ -253,7 +253,7 @@ Each package in the monorepo has dedicated documentation detailing its internal 
 
 - 🌐 [**apps/web**](apps/web/README.md): Next.js 16 frontend web application with React 19, Tailwind CSS v4, and App Router.
 - ⚡ [**apps/api**](apps/api/README.md): NestJS 12 backend REST API service with TypeORM, PostgreSQL, MinIO storage, and JWT RBAC.
-- 📦 [**shared**](shared/README.md): Centralized domain types, role definitions (`RoleCode`), and cross-boundary contracts.
+- 📦 [**shared**](shared/README.md): Centralized domain types, role definitions (`RoleCode`), domain permissions (`PermissionCode`, `DEFAULT_PERMISSIONS`), and cross-boundary contracts.
 
 ---
 
@@ -283,6 +283,7 @@ The following scripts can be executed from the root of the repository:
 - **Auto-Synchronization**: In development (`NODE_ENV=development`), TypeORM entity changes are automatically synchronized to PostgreSQL (`synchronize: true`). In production, synchronization is disabled to prevent accidental data loss.
 - **Connection Retries**: The database module incorporates automatic reconnection retry logic (up to 5 attempts with a 3-second delay).
 - **Default Role Seeding**: Upon API bootstrap, `RolesSeed` automatically populates default system roles (`super_admin`, `admin`, `sales_manager`, `employee`, `customer`, `leads`) sourced from `@apulse/shared`.
+- **Default Domain Permission Seeding**: `PermissionsSeed` automatically inserts missing default domain permissions (`dashboard`, `users`, `roles`, `permissions`, `products`, `offers`, `orders`, `customers`, `leads`, `analytics`, `employees`) on application bootstrap. The seeder is idempotent and preserves any customized permission names.
 
 ### MinIO Object Storage
 
