@@ -4,7 +4,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 
 import { UserService } from '../../user/user.service.js';
-import type { AuthenticatedUser } from '@apulse/shared';
+import type { AuthenticatedUser, PermissionCode } from '@apulse/shared';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -31,6 +31,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('User not found or inactive');
     }
 
+    const permissions: PermissionCode[] =
+      user.role?.permissions?.map((p) => p.code as PermissionCode) ?? [];
+
     return {
       id: user.id,
       firstName: user.firstName,
@@ -38,6 +41,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       email: user.email,
       roleId: user.roleId,
       roleCode: user.role.code,
+      permissions,
     };
   }
 }

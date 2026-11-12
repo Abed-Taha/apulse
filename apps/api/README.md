@@ -66,12 +66,15 @@ apps/api/
 
 ## Core Architecture & Domain Modules
 
-### 1. Authentication & Role-Based Access Control (RBAC)
+### 1. Authentication, RBAC & Domain Permissions
 
 - **JWT Authentication**: Validates Bearer tokens via `JwtAuthGuard` and `JwtStrategy`.
 - **Role Enforcement**: Protected routes use `@Roles('admin', ...)` paired with `RolesGuard`.
+- **Domain Permission Enforcement**: Protected domain routes use `@RequirePermissions(PermissionCode.PRODUCTS, ...)` paired with `PermissionsGuard`. Super Admins automatically bypass domain checks.
 - **System Roles**: Default roles are imported from `@apulse/shared` (`RoleCode`) and automatically seeded into the database on bootstrap via `RolesSeed`:
   - `super_admin`, `admin`, `sales_manager`, `employee`, `customer`, `leads`.
+- **Domain Permissions**: Default domain modules are imported from `@apulse/shared` (`PermissionCode`, `DEFAULT_PERMISSIONS`) and automatically seeded on bootstrap via `PermissionsSeed`. The seeder is idempotent and preserves any customized permission display names.
+- **Role-Permission Association**: Roles can be assigned multiple domain permissions through a many-to-many relationship (`role_permissions`).
 
 ### 2. Database & Data Access
 

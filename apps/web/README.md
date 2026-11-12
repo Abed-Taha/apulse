@@ -47,7 +47,7 @@ apps/web/
 
 1. **User Interface & Interaction**: Renders modern, responsive interfaces for product catalogs, shopping carts, orders, and dashboards.
 2. **Backend Communication**: Communicates with `apps/api` via REST endpoints using `NEXT_PUBLIC_API_URL`.
-3. **Shared Contracts**: Uses `@apulse/shared` for role codes (`RoleCode`), authenticated user session interfaces (`AuthenticatedUser`), and common schemas.
+3. **Shared Contracts & Domain Permissions**: Uses `@apulse/shared` for role codes (`RoleCode`), domain permission codes (`PermissionCode`), authenticated user session interfaces (`AuthenticatedUser`), and common schemas. Module and tab visibility is managed via `lib/permissions.ts` utilities (`canAccessDomain`).
 4. **Performance & Optimization**: Leverages Next.js font optimization (`next/font`), image optimization (`next/image`), and Turbopack for fast builds.
 
 ---

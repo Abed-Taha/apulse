@@ -36,11 +36,19 @@ export class UserService {
         email: true,
         roleId: true,
         role: {
+          id: true,
           code: true,
+          permissions: {
+            id: true,
+            code: true,
+            name: true,
+          },
         },
       },
       relations: {
-        role: true,
+        role: {
+          permissions: true,
+        },
       },
     });
   }
