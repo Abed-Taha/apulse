@@ -1,126 +1,187 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Apulse Backend API (`apps/api`)
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+The core backend REST API service for the Apulse platform, built with **NestJS 12**, **TypeORM**, **PostgreSQL 17**, **MinIO (S3)**, and **Passport JWT**.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## Overview
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+`apps/api` delivers the business logic, data persistence, file storage, security, and administrative services for the Apulse platform. It is built as a pure ECMAScript Module (ESM) application running on Node.js 22, consuming shared domain models and contracts from `@apulse/shared`.
 
-## Project setup
+---
 
-```bash
-$ pnpm install
+## Tech Stack
+
+| Technology              | Purpose                                                     |
+| :---------------------- | :---------------------------------------------------------- |
+| **NestJS 12**           | Scalable enterprise Node.js framework (ESM native)          |
+| **TypeORM**             | Object-Relational Mapper for PostgreSQL                     |
+| **PostgreSQL 17**       | Relational database for core transactional data             |
+| **MinIO (AWS SDK S3)**  | S3-compatible object storage for media, assets, and uploads |
+| **Passport & JWT**      | Stateless authentication and role-based token validation    |
+| **NestJS Observe**      | Tracing, performance metrics, and application observability |
+| **Oxlint & TypeScript** | Ultra-fast linter and static type checking                  |
+
+---
+
+## Directory Structure
+
+```
+apps/api/
+├── src/
+│   ├── core/                        # Core infrastructure and transversal features
+│   │   ├── database/                # TypeORM PostgreSQL module & connection lifecycle
+│   │   ├── decorators/              # Decorators (e.g., @Roles)
+│   │   ├── guards/                  # Security guards (JwtAuthGuard, RolesGuard)
+│   │   └── modules/                 # Aggregated CoreModules loader
+│   ├── modules/                     # Business domain modules
+│   │   ├── analytics/               # Visitor sessions, daily summaries, analytics events
+│   │   ├── auth/                    # JWT authentication, Passport strategy, auth controller
+│   │   ├── cart/                    # Shopping cart management
+│   │   ├── category/                # Product categories
+│   │   ├── invoice/                 # Invoices and order invoice tracking
+│   │   ├── notification/            # System and user notifications
+│   │   ├── offer/                   # Discounts, product offers, order promotions
+│   │   ├── order/                   # Orders and order item fulfillment
+│   │   ├── payment/                 # Payment records and states
+│   │   ├── permission/              # Granular permissions and user assignments
+│   │   ├── product/                 # Product catalog and product favorites/likes
+│   │   ├── role/                    # Role entities, RBAC controller, startup role seed
+│   │   ├── task/                    # Operational task management
+│   │   ├── user/                    # User accounts and profile management
+│   │   └── visitor/                 # Anonymous visitor tracking
+│   ├── storage/                     # MinIO S3 object storage service & client factory
+│   ├── app.controller.ts            # Root health controller
+│   ├── app.module.ts                # Root application module with Observe instrumentation
+│   ├── app.service.ts               # Root application service
+│   └── main.ts                      # Application bootstrap entry point
+├── nest-cli.json                    # Nest CLI configuration
+├── package.json                     # API manifest, dependencies, and scripts
+├── tsconfig.json                    # Base TypeScript compiler settings
+├── tsconfig.build.json              # Production build TypeScript configuration
+└── README.md                        # API service documentation
 ```
 
-## Compile and run the project
+---
 
-```bash
-# development
-$ pnpm run start
+## Core Architecture & Domain Modules
 
-# watch mode
-$ pnpm run start:dev
+### 1. Authentication & Role-Based Access Control (RBAC)
 
-# production mode
-$ pnpm run start:prod
-```
+- **JWT Authentication**: Validates Bearer tokens via `JwtAuthGuard` and `JwtStrategy`.
+- **Role Enforcement**: Protected routes use `@Roles('admin', ...)` paired with `RolesGuard`.
+- **System Roles**: Default roles are imported from `@apulse/shared` (`RoleCode`) and automatically seeded into the database on bootstrap via `RolesSeed`:
+  - `super_admin`, `admin`, `sales_manager`, `employee`, `customer`, `leads`.
 
-## Run tests
+### 2. Database & Data Access
 
-```bash
-# unit tests
-$ pnpm run test
+- Configured in `DatabaseModule` using TypeORM for PostgreSQL 17.
+- Automatically handles reconnection retries with configurable delay.
+- Schema auto-synchronization is enabled during development (`synchronize: true`) and disabled in production.
 
-# e2e tests
-$ pnpm run test:e2e
+### 3. Object Storage (MinIO)
 
-# test coverage
-$ pnpm run test:cov
-```
+- Abstracted by `StorageService` using `@aws-sdk/client-s3`.
+- Handles bucket creation, presigned upload URLs, asset retrieval, and public object endpoint resolution.
 
-## Deployment
+### 4. Observability
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+- Integrated with [NestJS Observe](https://observe.nestjs.com) in `AppModule` to report traces, slow operations, and system metrics.
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+---
 
-```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
-```
+## Configuration & Environment Variables
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+The API reads environment variables from the root `.env` file:
 
-## Observability
+| Variable                | Description                                             | Example / Default              |
+| :---------------------- | :------------------------------------------------------ | :----------------------------- |
+| `API_PORT`              | HTTP port the API listens on                            | `3001`                         |
+| `NODE_ENV`              | Application environment (`development` \| `production`) | `development`                  |
+| `POSTGRES_HOST`         | Database hostname or Docker service name                | `db` (Docker) / `localhost`    |
+| `POSTGRES_PORT`         | PostgreSQL port                                         | `5432`                         |
+| `POSTGRES_USER`         | PostgreSQL username                                     | `apulse`                       |
+| `POSTGRES_PASSWORD`     | PostgreSQL password                                     | `change_me`                    |
+| `POSTGRES_DB`           | PostgreSQL database name                                | `apulse`                       |
+| `MINIO_ENDPOINT`        | MinIO server hostname or Docker service name            | `minio` (Docker) / `localhost` |
+| `MINIO_PORT`            | MinIO S3 API port                                       | `9000`                         |
+| `MINIO_USE_SSL`         | Enable SSL for MinIO connection                         | `false`                        |
+| `MINIO_ROOT_USER`       | MinIO root/access key                                   | `apulse_admin`                 |
+| `MINIO_ROOT_PASSWORD`   | MinIO secret key                                        | `your-strong-password`         |
+| `MINIO_BUCKET`          | Default S3 bucket name                                  | `apulse-images`                |
+| `MINIO_REGION`          | MinIO region identifier                                 | `us-east-1`                    |
+| `MINIO_PUBLIC_ENDPOINT` | Public URL for media access                             | `http://localhost:9000`        |
+| `JWT_SECRET`            | Secret key used to sign and verify JWT tokens           | `your-strong-random-secret`    |
+| `JWT_EXPIRES_IN`        | JWT token expiration timeframe                          | `1h`                           |
+| `OBSERVE_APP_KEY`       | NestJS Observe telemetry application key                | Optional                       |
+| `OBSERVE_APP_SECRET`    | NestJS Observe telemetry secret key                     | Optional                       |
 
-In production applications, observability is essential for understanding how your system behaves, detecting issues early, and maintaining reliable performance.
+---
 
-[NestJS Observe](https://observe.nestjs.com) automatically instruments your NestJS application, giving you deep visibility into your system with minimal setup:
+## Development Scripts
 
-- **Distributed tracing:** Follow requests across services and understand how they flow through your system.
-- **Waterfall analysis:** Visualize request execution and identify slow operations, bottlenecks, and unexpected delays.
-- **Performance analysis:** Analyze application performance in real time and quickly pinpoint areas that need optimization.
-- **Metrics:** Track key application and infrastructure metrics to understand system health and performance trends.
-- **Logging:** Centralize and correlate logs with traces and other telemetry to make debugging easier.
-- **Error tracking:** Detect errors quickly and investigate their root causes with the surrounding context.
-- **SLA monitoring:** Track service-level objectives and identify when your application is approaching or exceeding defined thresholds.
-- **Alarms and alerts:** Set up alerts for critical errors, performance degradation, SLA violations, and other anomalies so your team can react quickly.
+Run these scripts from the repository root using `pnpm --filter api <command>` or within `apps/api/`:
 
-This project is already instrumented. To connect it, run this and approve the code it prints at [observe.nestjs.com/link](https://observe.nestjs.com/link) - signing up for free if you have no account:
+| Script         | Command             | Purpose                                                                |
+| :------------- | :------------------ | :--------------------------------------------------------------------- |
+| `start:dev`    | `pnpm start:dev`    | Starts the API in watch mode with live reloading                       |
+| `start:debug`  | `pnpm start:debug`  | Starts the API with debugging enabled on port 9229                     |
+| `build`        | `pnpm build`        | Compiles the NestJS application to `dist/`                             |
+| `start:prod`   | `pnpm start:prod`   | Runs the compiled production build from `dist/main.js`                 |
+| `lint`         | `pnpm lint`         | Runs type-aware Oxlint across `src/`                                   |
+| `typecheck`    | `pnpm typecheck`    | Checks TypeScript compilation without emitting output (`tsc --noEmit`) |
+| `format`       | `pnpm format`       | Auto-formats source code using Prettier                                |
+| `format:check` | `pnpm format:check` | Checks code formatting against Prettier                                |
 
-```bash
-$ npx @nestjs/observe link
-```
+---
 
-It writes the app key and secret into `.env` and makes every `nest start` script (`start`, `start:dev`, `start:debug`) load it. In production, set `OBSERVE_APP_KEY` and `OBSERVE_APP_SECRET` in the environment instead.
+## Running Locally
 
-Or do it by hand: create an application and an API key at [observe.nestjs.com](https://observe.nestjs.com), and set the pair as `OBSERVE_APP_KEY` and `OBSERVE_APP_SECRET` in the environment the app runs in.
+### Prerequisites
 
-The free plan needs no payment details and covers 300,000 events a month. You can also browse the [live demo](https://www.observe-demo.nestjs.com/dashboard) first - the whole dashboard over a busy service's data, with nothing to install.
+- Node.js `22.x`
+- pnpm `11.20.0`
+- Running PostgreSQL database (port 5432)
+- Running MinIO service (port 9000)
 
-## Resources
+### Native Local Execution
 
-Check out a few resources that may come in handy when working with NestJS:
+1. Ensure root dependencies are installed:
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Auto-instrument your application with [NestJS Observe](https://observe.nestjs.com). Distributed tracing, metrics, and logging made easy. Error tracking and performance monitoring for your NestJS applications.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+   ```bash
+   pnpm install
+   ```
 
-## Support
+2. Start dependencies (PostgreSQL and MinIO) using Docker Compose:
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+   ```bash
+   docker compose -f docker/docker-compose.dev.yml up -d db minio minio-init
+   ```
 
-## Stay in touch
+3. Launch the API development server:
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+   ```bash
+   pnpm --filter api start:dev
+   ```
 
-## License
+4. The API will be accessible at [http://localhost:3001](http://localhost:3001).
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+---
+
+## Docker Workflows
+
+### Development Container
+
+When launched via `pnpm docker:dev` or `pnpm docker:dev:start`:
+
+- Build configuration: `docker/api-dev.Dockerfile`.
+- Orchestrated by `docker/docker-compose.dev.yml`.
+- Dependencies (`db` and `minio`) must pass healthchecks before the API container starts.
+- Automatic live code mounting via volumes.
+
+### Production Container Build
+
+The production Dockerfile is located at `docker/api-prod.Dockerfile`:
+
+- **Builder Stage**: Installs dependencies with frozen lockfile and runs `pnpm --filter api build`.
+- **Runner Stage**: Minimal Node.js 22 runtime exposing port `3001` and starting the production server with `pnpm --filter api start:prod`.
