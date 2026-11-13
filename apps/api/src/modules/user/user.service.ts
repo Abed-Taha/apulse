@@ -20,6 +20,7 @@ export class UserService {
         lastName: true,
         email: true,
         password: true,
+        saltPass: true,
         roleId: true,
         deletedAt: true,
       },
