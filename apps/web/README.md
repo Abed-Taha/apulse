@@ -23,23 +23,41 @@ The frontend web client for the Apulse platform, built with **Next.js 16 (App Ro
 
 ---
 
-## Directory Structure
+## Application Structure
 
 ```
 apps/web/
-├── app/                      # Next.js App Router directory
-│   ├── favicon.ico           # Application favicon
-│   ├── globals.css           # Global Tailwind CSS imports & styles
-│   ├── layout.tsx            # Root HTML layout with Geist font loading
-│   └── page.tsx              # Application home landing page
-├── public/                   # Static public assets (SVGs, branding)
-├── eslint.config.mjs         # ESLint 9 flat configuration
-├── next.config.ts            # Next.js runtime & bundler configuration
-├── package.json              # Package manifest and workspace scripts
-├── pnpm-workspace.yaml       # Local workspace configuration
-├── tsconfig.json             # TypeScript compiler settings
-└── README.md                 # Package documentation
+├── app/                 # Next.js App Router entry points and styles
+├── context/             # Shared React contexts
+├── router/              # React Router setup and route guards
+├── public/              # Static assets
+└── lib/                 # Shared frontend utilities
 ```
+
+### Pages
+
+| URL / route           | File                      | Purpose                                                                               |
+| --------------------- | ------------------------- | ------------------------------------------------------------------------------------- |
+| `/`                   | `app/page.tsx`            | Mounts the client-side application router.                                            |
+| `/<any client route>` | `app/[...slugs]/page.tsx` | Catch-all Next.js page that serves direct visits and refreshes for React Router URLs. |
+| `/login`              | `router/AppRouter.tsx`    | Public login route, rendered by React Router.                                         |
+| `/` and future routes | `router/AppRouter.tsx`    | Defines the protected application routes and authentication guard.                    |
+
+The `[...slugs]` directory uses Next.js catch-all route syntax. It captures one
+or more URL segments so React Router can resolve nested routes when a user opens
+a URL directly or refreshes the browser.
+
+### Components
+
+| Component / file          | Responsibility                                                                                  |
+| ------------------------- | ----------------------------------------------------------------------------------------------- |
+| `app/providers.tsx`       | Wraps the application in shared providers.                                                      |
+| `router/ClientRouter.tsx` | Loads React Router on the client, where `BrowserRouter` can access the browser URL.             |
+| `router/AppRouter.tsx`    | Configures public and protected routes, loading UI, and auth guards.                            |
+| `context/AuthContext.tsx` | Provides centralized auth status, user state, and sign-in/sign-out actions through `useAuth()`. |
+
+Pages and components are documented separately so Next.js URL entry points are
+easy to distinguish from the React Router components that render those routes.
 
 ---
 
@@ -49,6 +67,22 @@ apps/web/
 2. **Backend Communication**: Communicates with `apps/api` via REST endpoints using `NEXT_PUBLIC_API_URL`.
 3. **Shared Contracts & Domain Permissions**: Uses `@apulse/shared` for role codes (`RoleCode`), domain permission codes (`PermissionCode`), authenticated user session interfaces (`AuthenticatedUser`), and common schemas. Module and tab visibility is managed via `lib/permissions.ts` utilities (`canAccessDomain`).
 4. **Performance & Optimization**: Leverages Next.js font optimization (`next/font`), image optimization (`next/image`), and Turbopack for fast builds.
+
+## Authentication and Routing
+
+The root and catch-all Next.js pages render `ClientRouter`, which loads
+`router/AppRouter.tsx` on the client (where `BrowserRouter` is available).
+The `/login` route is public; application routes are nested under
+`RequireAuth`, which waits for session initialization and preserves the
+requested path, query, and hash when redirecting to login.
+
+`AuthProvider` exposes `useAuth()` with `status`, `user`, `signIn`, and
+`signOut`. Pass an asynchronous `resolveSession` function to `ClientRouter`
+from a client component to restore and verify a session at startup. Until
+login/session integration is implemented, the resolver defaults to signed out;
+it intentionally does not treat a client-side storage flag as proof of
+authentication. Add future protected routes as children of the authenticated
+route group in `router/AppRouter.tsx`.
 
 ---
 
