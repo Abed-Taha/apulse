@@ -1,5 +1,7 @@
 import { createTheme, type PaletteMode } from '@mui/material/styles';
 
+export const THEME_STORAGE_KEY = 'apulse-theme';
+
 export function createAppTheme(mode: PaletteMode) {
   const isDark = mode === 'dark';
 
