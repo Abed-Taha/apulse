@@ -17,6 +17,8 @@ The frontend web client for the Apulse platform, built with **Next.js 16 (App Ro
 | **Next.js 16**      | Full-stack React framework with App Router architecture     |
 | **React 19**        | Modern UI rendering library with Server & Client components |
 | **Tailwind CSS v4** | Utility-first CSS framework using Turbopack compiler        |
+| **Material UI**     | Shared component system and light/dark theme                |
+| **TanStack Query**  | Shared server-state cache and query lifecycle               |
 | **TypeScript 5**    | Strict static type checking                                 |
 | **ESLint 9**        | Code quality and linting rules                              |
 | **Prettier 3**      | Code style formatting                                       |
@@ -31,7 +33,7 @@ apps/web/
 ├── context/             # Shared React contexts
 ├── router/              # React Router setup and route guards
 ├── public/              # Static assets
-└── lib/                 # Shared frontend utilities
+└── lib/                 # Shared utilities, including the QueryClient singleton
 ```
 
 ### Pages
@@ -52,12 +54,29 @@ a URL directly or refreshes the browser.
 | Component / file          | Responsibility                                                                                  |
 | ------------------------- | ----------------------------------------------------------------------------------------------- |
 | `app/providers.tsx`       | Wraps the application in shared providers.                                                      |
+| `app/theme.ts`            | Creates the shared MUI theme for the active light/dark mode.                                    |
+| `app/theme-provider.tsx`  | Syncs MUI with the root `data-theme` attribute and system color preference.                     |
+| `lib/query-client.ts`     | Configures the single application-wide TanStack Query client and defaults.                      |
+| `lib/api-client.ts`       | Provides a shared API request object with optional bearer-token injection.                      |
 | `router/ClientRouter.tsx` | Loads React Router on the client, where `BrowserRouter` can access the browser URL.             |
 | `router/AppRouter.tsx`    | Configures public and protected routes, loading UI, and auth guards.                            |
 | `context/AuthContext.tsx` | Provides centralized auth status, user state, and sign-in/sign-out actions through `useAuth()`. |
 
 Pages and components are documented separately so Next.js URL entry points are
 easy to distinguish from the React Router components that render those routes.
+
+The root layout installs MUI's Next.js app-router cache provider to collect
+styles during rendering. `app/providers.tsx` makes the MUI theme, TanStack Query
+client, and auth context available across both Next.js pages and React Router
+routes. To explicitly switch color modes, set `data-theme="light"` or
+`data-theme="dark"` on the document root; when unset, the OS color preference
+is used.
+
+Use `apiClient.request(path, { accessToken, ...options })` for API calls. The
+client adds the supplied access token as a Bearer authorization header and
+throws `ApiRequestError` for unsuccessful responses; it does not store or
+retrieve credentials. The returned value is the successful `Response`, so
+callers can choose the appropriate body parser.
 
 ---
 
