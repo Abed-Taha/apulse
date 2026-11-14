@@ -1,0 +1,8 @@
+export const EMAIL_CONFIG = {
+  HOST: 'SMTP_HOST',
+  PORT: 'SMTP_PORT',
+  SECURE: 'SMTP_SECURE',
+  USER: 'SMTP_USER',
+  PASSWORD: 'SMTP_PASSWORD',
+  FROM: 'MAIL_FROM',
+} as const;
