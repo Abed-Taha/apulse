@@ -27,6 +27,7 @@ services:
       NODE_ENV: production
       PORT: 3001
       DATABASE_URL: ${DATABASE_URL}
+
       MINIO_ENDPOINT: minio
       MINIO_PORT: 9000
       MINIO_USE_SSL: ${MINIO_USE_SSL:-false}
@@ -35,6 +36,14 @@ services:
       MINIO_BUCKET: ${MINIO_BUCKET:-apulse-images}
       MINIO_REGION: ${MINIO_REGION:-us-east-1}
       MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT}
+
+      # Email - Mailtrap Transactional Stream
+      SMTP_HOST: ${SMTP_HOST:-live.smtp.mailtrap.io}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-api}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:?SMTP_PASSWORD is required}
+      MAIL_FROM: ${MAIL_FROM:?MAIL_FROM is required}
 
     depends_on:
       db:
