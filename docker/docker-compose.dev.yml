@@ -10,7 +10,7 @@ services:
       - '${WEB_PORT:-3000}:3000'
     environment:
       NODE_ENV: development
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
     volumes:
       - ..:/app
       - web_node_modules:/app/node_modules
@@ -30,15 +30,30 @@ services:
     environment:
       NODE_ENV: development
       PORT: 3001
-      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+
       MINIO_ENDPOINT: ${MINIO_ENDPOINT:-minio}
       MINIO_PORT: ${MINIO_PORT:-9000}
       MINIO_USE_SSL: ${MINIO_USE_SSL:-false}
-      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
-      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:?MINIO_ROOT_USER is required}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
       MINIO_BUCKET: ${MINIO_BUCKET:-apulse-images}
       MINIO_REGION: ${MINIO_REGION:-us-east-1}
       MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-http://localhost:9000}
+
+      # JWT Authentication
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1h}
+      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET:?REFRESH_TOKEN_SECRET is required}
+      REFRESH_TOKEN_EXPIRES_IN: ${REFRESH_TOKEN_EXPIRES_IN:-1h}
+
+      # Email - Mailpit
+      SMTP_HOST: ${SMTP_HOST:-mailpit}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-Apulse <hello@apulse.local>}
 
     volumes:
       - ..:/app
@@ -50,6 +65,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+      mailpit:
+        condition: service_started
 
     restart: unless-stopped
 
@@ -59,28 +76,31 @@ services:
     ports:
       - '${POSTGRES_PORT:-5432}:5432'
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
     volumes:
       - postgres_dev_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"
       interval: 5s
       timeout: 5s
       retries: 10
+      start_period: 10s
     restart: unless-stopped
 
   minio:
     container_name: apulse-minio
-    image: ${MINIO_IMAGE}
+    image: ${MINIO_IMAGE:?MINIO_IMAGE is required}
     command: server /data --console-address ":9001"
     ports:
       - '${MINIO_API_PORT:-9000}:9000'
       - '${MINIO_CONSOLE_PORT:-9001}:9001'
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?MINIO_ROOT_USER is required}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
     volumes:
       - minio_dev_data:/data
     healthcheck:
@@ -88,6 +108,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+      start_period: 10s
     restart: unless-stopped
 
   minio-init:
@@ -112,6 +133,16 @@ services:
         mc anonymous set download apulse/$$MINIO_BUCKET
 
     restart: 'no'
+  mailpit:
+    container_name: apulse-mailpit
+    image: axllent/mailpit:latest
+    ports:
+      - '${MAILPIT_SMTP_PORT:-1025}:1025'
+      - '${MAILPIT_UI_PORT:-8025}:8025'
+    environment:
+      MP_MAX_MESSAGES: 5000
+    restart: unless-stopped
+
 volumes:
   postgres_dev_data:
   web_node_modules:
