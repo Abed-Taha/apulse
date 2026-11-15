@@ -357,3 +357,19 @@ The production Dockerfile is located at `docker/api-prod.Dockerfile`:
 - Use Mailpit for local development and testing; use a configured external SMTP provider in production.
 - Do not expose temporary email-testing endpoints in production.
 - Update this README whenever the email module, supported templates, SMTP configuration, or provider integration changes.
+
+### Swagger API Documentation
+
+Apulse API provides interactive API documentation through Swagger UI, powered by `@nestjs/swagger`. It allows developers to explore available endpoints, inspect request and response schemas, and test API requests directly from the browser. JWT Bearer authentication is also supported for testing protected endpoints.
+
+When the API is running, access the documentation at:
+
+`http://localhost:3001/api/docs`
+
+Swagger UI can be enabled or disabled using the `SWAGGER_ENABLED` environment variable:
+
+```env
+SWAGGER_ENABLED=true
+```
+
+Set it to `false` to disable the documentation, especially in production environments.
