@@ -36,7 +36,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
-        <Script id="apulse-theme-init" strategy="beforeInteractive">
+        <Script id="apulse-theme-init" strategy="afterInteractive">
           {themeInitializationScript}
         </Script>
       </head>
