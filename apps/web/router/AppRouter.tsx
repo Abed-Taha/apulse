@@ -1,8 +1,16 @@
 'use client';
 
-import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
+import {
+  BrowserRouter,
+  Navigate,
+  Outlet,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from 'react-router-dom';
 import { AuthProvider, type SessionResolver, useAuth } from '@/context/AuthContext';
-import { LoadingState } from '@/app/components';
+import { LoadingState, Navbar } from '@/app/components';
 
 export interface AppRouterProps {
   resolveSession?: SessionResolver;
@@ -12,6 +20,7 @@ export function AppRouter({ resolveSession }: AppRouterProps) {
   return (
     <AuthProvider resolveSession={resolveSession}>
       <BrowserRouter>
+        <AppNavbar />
         <Routes>
           {/* Guest-only routes */}
           <Route path="/login" element={<GuestGuard />}>
@@ -103,6 +112,19 @@ function NotFoundPage() {
     <main>
       <h1>Page not found</h1>
     </main>
+  );
+}
+
+function AppNavbar() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  return (
+    <Navbar
+      onSettingsClick={() => navigate('/settings')}
+      user={user}
+      onProfileClick={() => navigate('/profile')}
+    />
   );
 }
 

@@ -5,14 +5,14 @@ import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
+import { componentStyles } from '@/app/styles/components';
 
 export function ThemeSwitcher() {
   const { mode, toggleTheme } = useAppTheme();
 
   return (
     <Tooltip title={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}>
-      <IconButton onClick={toggleTheme} color="inherit">
-        {mode}
+      <IconButton onClick={toggleTheme} sx={componentStyles.actionButton}>
         {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
       </IconButton>
     </Tooltip>
