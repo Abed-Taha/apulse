@@ -2,6 +2,7 @@
 
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
 import { AuthProvider, type SessionResolver, useAuth } from '@/context/AuthContext';
+import { LoadingState } from '@/app/components';
 
 export interface AppRouterProps {
   resolveSession?: SessionResolver;
@@ -101,14 +102,6 @@ function NotFoundPage() {
   return (
     <main>
       <h1>Page not found</h1>
-    </main>
-  );
-}
-
-function LoadingState() {
-  return (
-    <main aria-busy="true" aria-live="polite">
-      <p>Loading…</p>
     </main>
   );
 }
