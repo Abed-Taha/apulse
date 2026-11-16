@@ -1,4 +1,6 @@
 import {
+  BeforeInsert,
+  BeforeUpdate,
   Column,
   CreateDateColumn,
   DeleteDateColumn,
@@ -64,4 +66,13 @@ export class User {
 
   @Column({ type: 'varchar', length: 500, nullable: true })
   avatar: string | null;
+
+  @Column({ type: 'varchar', name: 'name' })
+  name: string;
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  uploadFullName(): void {
+    this.name = `${this.firstName} ${this.lastName}`.trim();
+  }
 }
