@@ -3,6 +3,7 @@
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
 import { AuthProvider, type SessionResolver, useAuth } from '@/context/AuthContext';
 import { LoadingState, AppLayout } from '@/app/components';
+import RegisterPage from '@/app/pages/auth/register/register.page';
 
 export interface AppRouterProps {
   resolveSession?: SessionResolver;
@@ -14,9 +15,10 @@ export function AppRouter({ resolveSession }: AppRouterProps) {
       <BrowserRouter>
         <Routes>
           {/* Guest-only routes */}
-          <Route path="/login" element={<GuestGuard />}>
+          <Route element={<GuestGuard />}>
             <Route element={<AppLayout sideBarOpen={false} />}>
-              <Route index element={<LoginPage />} />
+              <Route path="login" element={<LoginPage />} />
+              <Route path="register" element={<RegisterPage />} />
             </Route>
           </Route>
 
@@ -115,7 +117,7 @@ function NotFoundPage() {
 // ---------------------------------------------------------------------------
 // Return-URL helper – validates the stored location to prevent open redirects.
 // Accepts only same-origin paths (must start with "/" but not "//").
-// Rejects /login to avoid an authentication loop.
+// Rejects guest-only routes to avoid authentication loops.
 // ---------------------------------------------------------------------------
 function getReturnTo(state: unknown): string {
   if (typeof state !== 'object' || state === null || !('from' in state)) {
@@ -134,7 +136,8 @@ function getReturnTo(state: unknown): string {
     typeof from.hash !== 'string' ||
     !from.pathname.startsWith('/') ||
     from.pathname.startsWith('//') ||
-    from.pathname === '/login'
+    from.pathname === '/login' ||
+    from.pathname === '/register'
   ) {
     return '/';
   }
