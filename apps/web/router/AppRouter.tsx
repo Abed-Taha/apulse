@@ -15,7 +15,7 @@ export function AppRouter({ resolveSession }: AppRouterProps) {
         <Routes>
           {/* Guest-only routes */}
           <Route path="/login" element={<GuestGuard />}>
-            <Route element={<AppLayout sideBarOpen={true} />}>
+            <Route element={<AppLayout sideBarOpen={false} />}>
               <Route index element={<LoginPage />} />
             </Route>
           </Route>
