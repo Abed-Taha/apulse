@@ -7,9 +7,15 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Repository, IsNull } from 'typeorm';
-import { createHash, pbkdf2Sync, timingSafeEqual } from 'node:crypto';
+import {
+  createHash,
+  pbkdf2Sync,
+  randomBytes,
+  timingSafeEqual,
+} from 'node:crypto';
 
 import { UserService } from '../user/user.service.js';
+import { RegisterDto } from './dto/register.dto.js';
 import { RefreshToken } from './entities/refresh-token.entity.js';
 import {
   generateRefreshToken,
@@ -125,7 +131,7 @@ export class AuthService {
       throw new BadRequestException('Email and password are required');
     }
 
-    const user = await this.userService.findByEmailForAuth(email);
+    const user = await this.userService.findByEmailForAuth(email.trim());
 
     if (!user || user.deletedAt) {
       throw new UnauthorizedException('Invalid credentials');
@@ -141,6 +147,36 @@ export class AuthService {
     const [accessToken, refreshToken] = await Promise.all([
       Promise.resolve(this.signAccessToken(user.id)),
       this.createRefreshToken(user.id, deviceInfo),
+    ]);
+
+    return { accessToken, refreshToken };
+  }
+
+  /**
+   * Create a customer account and issue its initial token pair.
+   */
+  async register(registerPayload: RegisterDto): Promise<TokenPair> {
+    const iterations = 310_000;
+    const salt = randomBytes(16).toString('hex');
+    const passwordHash = pbkdf2Sync(
+      registerPayload.password,
+      salt,
+      iterations,
+      64,
+      'sha512',
+    ).toString('hex');
+
+    const user = await this.userService.createRegisteredUser({
+      firstName: registerPayload.firstName,
+      lastName: registerPayload.lastName,
+      email: registerPayload.email,
+      password: passwordHash,
+      saltPass: `${iterations}:${salt}:${passwordHash}`,
+    });
+
+    const [accessToken, refreshToken] = await Promise.all([
+      Promise.resolve(this.signAccessToken(user.id)),
+      this.createRefreshToken(user.id),
     ]);
 
     return { accessToken, refreshToken };

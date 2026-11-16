@@ -7,12 +7,19 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common';
-import { AuthService } from './auth.service.js';
+import { AuthService, TokenPair } from './auth.service.js';
 import { LoginDto } from './dto/login.dto.js';
 import { RefreshTokenDto } from './dto/refresh-token.dto.js';
 import { JwtAuthGuard } from '../../core/guards/jwt-auth.guard.js';
 import { Public } from '../../core/decorators/public.decorator.js';
 import type { AuthenticatedUser } from '@apulse/shared';
+import { RegisterDto } from './dto/register.dto.js';
+import {
+  ApiBadRequestResponse,
+  ApiConflictResponse,
+  ApiCreatedResponse,
+  ApiOperation,
+} from '@nestjs/swagger';
 
 @Controller('auth')
 export class AuthController {
@@ -22,6 +29,27 @@ export class AuthController {
    * POST /auth/login
    * Authenticate with email + password and receive a token pair.
    */
+  @Public()
+  @Post('register')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Register a new user',
+    description:
+      'Creates a new user account and returns an access token and refresh token.',
+  })
+  @ApiCreatedResponse({
+    description: 'User successfully registered.',
+    type: Promise<TokenPair>,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid registration payload.',
+  })
+  @ApiConflictResponse({
+    description: 'An account with this email address already exists.',
+  })
+  async register(@Body() registerPayload: RegisterDto): Promise<TokenPair> {
+    return this.authService.register(registerPayload);
+  }
   @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
