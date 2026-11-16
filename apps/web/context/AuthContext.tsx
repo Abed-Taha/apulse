@@ -1,6 +1,7 @@
 'use client';
 
 import type { AuthenticatedUser } from '@apulse/shared';
+import axios from 'axios';
 import {
   createContext,
   useCallback,
@@ -10,6 +11,8 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { authService } from '@/services/auth.service';
+import { getAccessToken, setAuthTokens } from '@/lib/api-client';
 
 export type SessionResolver = () => Promise<AuthenticatedUser | null>;
 
@@ -32,16 +35,29 @@ interface AuthProviderProps {
   resolveSession?: SessionResolver;
 }
 
-// ---------------------------------------------------------------------------
-// Placeholder: replace with real session resolution once backend auth is wired.
-// Should call GET /api/auth/me (or validate a stored access token) and return
-// the authenticated user, or null when no valid session exists.
-// ---------------------------------------------------------------------------
-const resolveNoSession: SessionResolver = async () => null;
+const resolveStoredSession: SessionResolver = async () => {
+  if (!getAccessToken()) {
+    return null;
+  }
+
+  try {
+    return await authService.getCurrentUser();
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      setAuthTokens(null);
+      return null;
+    }
+
+    throw error;
+  }
+};
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-export function AuthProvider({ children, resolveSession = resolveNoSession }: AuthProviderProps) {
+export function AuthProvider({
+  children,
+  resolveSession = resolveStoredSession,
+}: AuthProviderProps) {
   const [state, setState] = useState<AuthState>({
     status: 'loading',
     user: null,
@@ -101,6 +117,7 @@ export function AuthProvider({ children, resolveSession = resolveNoSession }: Au
 
   const signOut = useCallback(() => {
     requestId.current += 1;
+    setAuthTokens(null);
     setState({ status: 'unauthenticated', user: null, error: null });
   }, []);
 
