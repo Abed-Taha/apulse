@@ -1,16 +1,8 @@
 'use client';
 
-import {
-  BrowserRouter,
-  Navigate,
-  Outlet,
-  Route,
-  Routes,
-  useLocation,
-  useNavigate,
-} from 'react-router-dom';
+import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
 import { AuthProvider, type SessionResolver, useAuth } from '@/context/AuthContext';
-import { LoadingState, Navbar } from '@/app/components';
+import { LoadingState, AppLayout } from '@/app/components';
 
 export interface AppRouterProps {
   resolveSession?: SessionResolver;
@@ -20,22 +12,27 @@ export function AppRouter({ resolveSession }: AppRouterProps) {
   return (
     <AuthProvider resolveSession={resolveSession}>
       <BrowserRouter>
-        <AppNavbar />
         <Routes>
           {/* Guest-only routes */}
           <Route path="/login" element={<GuestGuard />}>
-            <Route index element={<LoginPage />} />
+            <Route element={<AppLayout sideBarOpen={true} />}>
+              <Route index element={<LoginPage />} />
+            </Route>
           </Route>
 
           {/* Protected routes */}
           <Route element={<AuthGuard />}>
-            <Route path="/" element={<main>Apulse</main>} />
-            {/*
-             * Add further protected routes here, e.g.:
-             *   <Route path="/dashboard" element={<DashboardPage />} />
-             *   <Route path="/users" element={<UsersPage />} />
-             */}
-            <Route path="*" element={<NotFoundPage />} />
+            <Route element={<AppLayout />}>
+              <Route path="/" element={<main>Apulse</main>} />
+
+              {/*
+            Add protected routes here:
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/users" element={<UsersPage />} />
+          */}
+
+              <Route path="*" element={<NotFoundPage />} />
+            </Route>
           </Route>
         </Routes>
       </BrowserRouter>
@@ -112,19 +109,6 @@ function NotFoundPage() {
     <main>
       <h1>Page not found</h1>
     </main>
-  );
-}
-
-function AppNavbar() {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-
-  return (
-    <Navbar
-      onSettingsClick={() => navigate('/settings')}
-      user={user}
-      onProfileClick={() => navigate('/profile')}
-    />
   );
 }
 
