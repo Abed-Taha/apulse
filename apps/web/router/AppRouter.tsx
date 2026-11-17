@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from 'rea
 import { AuthProvider, type SessionResolver, useAuth } from '@/context/AuthContext';
 import { LoadingState, AppLayout } from '@/app/components';
 import RegisterPage from '@/app/pages/auth/register/register.page';
+import LoginPage from '@/app/pages/auth/login/login.page';
 
 export interface AppRouterProps {
   resolveSession?: SessionResolver;
@@ -92,18 +93,6 @@ function GuestGuard() {
   }
 
   return <Outlet />;
-}
-
-// ---------------------------------------------------------------------------
-// Page components (UI implementations added separately per task scope)
-// ---------------------------------------------------------------------------
-function LoginPage() {
-  return (
-    <main>
-      <h1>Login</h1>
-      <p>The login screen will be added separately.</p>
-    </main>
-  );
 }
 
 function NotFoundPage() {
