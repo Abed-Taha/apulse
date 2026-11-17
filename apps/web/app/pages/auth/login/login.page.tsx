@@ -131,6 +131,7 @@ export default function LoginPage() {
               <TextField
                 label="Email address"
                 type="email"
+                placeholder="John@exmaple.com"
                 autoComplete="email"
                 fullWidth
                 autoFocus
@@ -141,6 +142,7 @@ export default function LoginPage() {
 
               <TextField
                 label="Password"
+                placeholder="Password"
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password"
                 fullWidth
