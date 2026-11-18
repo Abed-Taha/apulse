@@ -8,4 +8,6 @@ export interface AuthenticatedUser {
   roleId: string;
   roleCode: string;
   permissions?: PermissionCode[];
+  name: string;
+  avatar: string | null;
 }
