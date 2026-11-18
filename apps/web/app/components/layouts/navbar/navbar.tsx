@@ -7,6 +7,8 @@ import { ThemeSwitcher } from '@/app/hooks/theme-switcher';
 import { AuthenticatedUser } from '@shared/index';
 import { componentStyles } from '@/app/styles/components';
 import { useNavigate } from 'react-router-dom';
+import { useLogout } from '@/app/hooks/useLogout';
+import { AvatarProfile } from '../../ui/avatarProfile';
 
 interface NavbarProps {
   onSettingsClick: () => void;
@@ -17,17 +19,10 @@ interface NavbarProps {
 export function Navbar({ onSettingsClick, user }: NavbarProps) {
   const navigate = useNavigate();
 
+  const navigateProfile = () => navigate('/profile');
   const navigateLogin = () => navigate('/login');
-  // const navigateProfile = () => navigate('/profile');
-  // const getInitials = (name: string) =>
-  //   name
-  //     .trim()
-  //     .split(/\s+/)
-  //     .map((part) => part[0])
-  //     .slice(0, 2)
-  //     .join('')
-  //     .toUpperCase();
 
+  const { mutate: logout, isPending: isLoggingOut } = useLogout();
   return (
     <AppBar position="static" elevation={0} color="transparent" sx={componentStyles.navbar}>
       <Toolbar disableGutters sx={componentStyles.navbarToolbar}>
@@ -52,23 +47,14 @@ export function Navbar({ onSettingsClick, user }: NavbarProps) {
                   <SettingsOutlined />
                 </IconButton>
               </Tooltip>
-              {/* <Tooltip title={user.firstName}>
-                <Button onClick={navigateProfile}
-                >
-                  <Avatar
-                    src={''}
-                    alt={'user.firtName'}
-                    sx={{
-                      width: 34,
-                      height: 34,
-                      fontSize: 14,
-                      fontWeight: 600,
-                    }}
-                  >
-                    {getInitials(user.firstName)}
-                  </Avatar> 
+              <Tooltip title={user.name}>
+                <Button onClick={navigateProfile}>
+                  <AvatarProfile imageKey={user.avatar} name={user.name} />
                 </Button>
-              </Tooltip> */}
+              </Tooltip>
+              <Button onClick={() => logout()} disabled={isLoggingOut}>
+                {isLoggingOut ? 'Signing out...' : 'Logout'}
+              </Button>
             </>
           ) : (
             <Button variant="contained" onClick={navigateLogin}>
