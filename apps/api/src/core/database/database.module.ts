@@ -1,6 +1,7 @@
 import { Logger, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { DatabaseService } from './database.service.js';
 
 const logger = new Logger('Database');
 
@@ -11,11 +12,18 @@ const logger = new Logger('Database');
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
-        host: config.getOrThrow<string>('POSTGRES_HOST'),
-        port: config.get<number>('POSTGRES_PORT', 5432),
-        username: config.getOrThrow<string>('POSTGRES_USER'),
-        password: config.getOrThrow<string>('POSTGRES_PASSWORD'),
-        database: config.getOrThrow<string>('POSTGRES_DB'),
+        ...(config.get<string>('DATABASE_URL')
+          ? {
+              url: config.getOrThrow<string>('DATABASE_URL'),
+              ssl: { rejectUnauthorized: false },
+            }
+          : {
+              host: config.getOrThrow<string>('POSTGRES_HOST'),
+              port: config.get<number>('POSTGRES_PORT', 5432),
+              username: config.getOrThrow<string>('POSTGRES_USER'),
+              password: config.getOrThrow<string>('POSTGRES_PASSWORD'),
+              database: config.getOrThrow<string>('POSTGRES_DB'),
+            }),
         autoLoadEntities: true,
         synchronize: config.get('NODE_ENV') !== 'production',
         logging: config.get('NODE_ENV') === 'development',
@@ -30,5 +38,7 @@ const logger = new Logger('Database');
       }),
     }),
   ],
+  providers: [DatabaseService],
+  exports: [DatabaseService],
 })
 export class DatabaseModule {}
