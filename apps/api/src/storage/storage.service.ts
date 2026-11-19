@@ -3,7 +3,6 @@ import {
   Logger,
   OnModuleDestroy,
   OnModuleInit,
-  ServiceUnavailableException,
   InternalServerErrorException,
   BadRequestException,
 } from '@nestjs/common';
@@ -71,8 +70,10 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
    * Check MinIO connection and initialize the bucket.
    * Retry because MinIO may take longer to become ready.
    */
+
   private async initializeBucket(): Promise<void> {
-    const maxAttempts = 10;
+    const maxAttempts = 3;
+    const retryDelay = 2000;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
@@ -86,9 +87,10 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
 
         return;
       } catch (error: any) {
+        let initializationError: any = error;
         const statusCode = error.$metadata?.httpStatusCode;
 
-        // A missing bucket should be created.
+        // Create the bucket if it doesn't exist.
         if (statusCode === 404 || error.name === 'NotFound') {
           try {
             await this.client.send(
@@ -105,30 +107,47 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
               createError.name === 'BucketAlreadyOwnedByYou' ||
               createError.name === 'BucketAlreadyExists'
             ) {
+              this.logger.log(
+                `MinIO bucket "${this.config.bucket}" already exists.`,
+              );
               return;
             }
 
-            throw createError;
+            initializationError = createError;
           }
         }
 
-        // Permission errors should not be treated as missing buckets.
-        if (statusCode === 403) {
-          throw error;
+        // Don't retry permission errors.
+        if (
+          initializationError.$metadata?.httpStatusCode === 403 ||
+          initializationError.name === 'AccessDenied'
+        ) {
+          this.logger.warn(
+            'MinIO access denied. Storage functionality may be unavailable.',
+          );
+          return;
         }
 
         if (attempt === maxAttempts) {
-          this.logger.error('Unable to initialize MinIO bucket.');
-          throw new ServiceUnavailableException(
-            'MinIO storage is unavailable.',
+          this.logger.warn(
+            `Unable to initialize MinIO after ${maxAttempts} attempts. ` +
+              'The API will continue starting without storage availability.',
           );
+
+          this.logger.debug(
+            initializationError instanceof Error
+              ? initializationError.message
+              : String(error),
+          );
+
+          return;
         }
 
         this.logger.warn(
-          `MinIO connection attempt ${attempt}/${maxAttempts} failed.`,
+          `MinIO initialization attempt ${attempt}/${maxAttempts} failed. Retrying...`,
         );
 
-        await new Promise((resolve) => setTimeout(resolve, 3000));
+        await new Promise((resolve) => setTimeout(resolve, retryDelay));
       }
     }
   }
