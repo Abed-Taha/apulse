@@ -5,9 +5,11 @@ import {
   OnModuleInit,
   InternalServerErrorException,
   BadRequestException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 
 import {
+  S3Client,
   HeadBucketCommand,
   CreateBucketCommand,
   PutObjectCommand,
@@ -40,13 +42,17 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
   private readonly config = getStorageConfig();
 
   // Internal client: API container -> MinIO container.
-  private readonly client = createStorageClient(this.config);
+  private readonly client = this.config.enabled
+    ? createStorageClient(this.config)
+    : null;
 
   // Public client: used to generate URLs accessible by browsers.
-  private readonly publicClient = createStorageClient(
-    this.config,
-    this.config.publicEndpoint.replace(/\/+$/, ''),
-  );
+  private readonly publicClient = this.config.enabled
+    ? createStorageClient(
+        this.config,
+        this.config.publicEndpoint.replace(/\/+$/, ''),
+      )
+    : null;
 
   private readonly maxFileSize = 5 * 1024 * 1024;
 
@@ -58,12 +64,17 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
   ]);
 
   async onModuleInit(): Promise<void> {
+    if (!this.config.enabled) {
+      this.logger.log('Storage is disabled.');
+      return;
+    }
+
     await this.initializeBucket();
   }
 
   onModuleDestroy(): void {
-    this.client.destroy();
-    this.publicClient.destroy();
+    this.client?.destroy();
+    this.publicClient?.destroy();
   }
 
   /**
@@ -77,7 +88,7 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
-        await this.client.send(
+        await this.getClient().send(
           new HeadBucketCommand({
             Bucket: this.config.bucket,
           }),
@@ -93,7 +104,7 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
         // Create the bucket if it doesn't exist.
         if (statusCode === 404 || error.name === 'NotFound') {
           try {
-            await this.client.send(
+            await this.getClient().send(
               new CreateBucketCommand({
                 Bucket: this.config.bucket,
               }),
@@ -156,6 +167,7 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
    * Upload an image to MinIO.
    */
   async uploadFile(options: UploadFileOptions): Promise<UploadedFile> {
+    const client = this.getClient();
     const { buffer, mimeType, folder } = options;
 
     if (!buffer?.length) {
@@ -179,7 +191,7 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
     const key = `${folder}/${randomUUID()}${extension}`;
 
     try {
-      await this.client.send(
+      await client.send(
         new PutObjectCommand({
           Bucket: this.config.bucket,
           Key: key,
@@ -209,12 +221,14 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
    * Delete an image from MinIO.
    */
   async deleteFile(key: string): Promise<void> {
+    const client = this.getClient();
+
     if (!key?.trim()) {
       throw new BadRequestException('File key is required.');
     }
 
     try {
-      await this.client.send(
+      await client.send(
         new DeleteObjectCommand({
           Bucket: this.config.bucket,
           Key: key,
@@ -236,12 +250,13 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
    * Generate a temporary URL accessible by the browser.
    */
   async getFileUrl(key: string, expiresIn = 3600): Promise<string> {
+    const client = this.getPublicClient();
     const command = new GetObjectCommand({
       Bucket: this.config.bucket,
       Key: key,
     });
 
-    return getSignedUrl(this.publicClient, command, {
+    return getSignedUrl(client, command, {
       expiresIn,
     });
   }
@@ -250,12 +265,14 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
    * Check whether an object exists.
    */
   async fileExists(key: string): Promise<boolean> {
+    const client = this.getClient();
+
     if (!key?.trim()) {
       throw new BadRequestException('File key is required.');
     }
 
     try {
-      await this.client.send(
+      await client.send(
         new HeadObjectCommand({
           Bucket: this.config.bucket,
           Key: key,
@@ -278,5 +295,21 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
 
   getBucket(): string {
     return this.config.bucket;
+  }
+
+  private getClient(): S3Client {
+    if (!this.client) {
+      throw new ServiceUnavailableException('Storage is disabled.');
+    }
+
+    return this.client;
+  }
+
+  private getPublicClient(): S3Client {
+    if (!this.publicClient) {
+      throw new ServiceUnavailableException('Storage is disabled.');
+    }
+
+    return this.publicClient;
   }
 }
