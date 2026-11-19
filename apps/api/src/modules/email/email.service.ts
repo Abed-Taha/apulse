@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import { EMAIL_CONFIG } from './email.constants.js';
@@ -13,17 +17,27 @@ import type {
 
 @Injectable()
 export class EmailService {
-  private readonly from: string;
+  private readonly from: string | null;
 
   constructor(
     private readonly transport: EmailTransport,
     private readonly templateService: EmailTemplateService,
     private readonly configService: ConfigService,
   ) {
-    this.from = this.configService.getOrThrow<string>(EMAIL_CONFIG.FROM);
+    if (this.transport.isEnabled()) {
+      const from = this.configService.get<string>(EMAIL_CONFIG.FROM);
+      if (!from?.trim()) {
+        throw new Error('MAIL_FROM is required when EMAIL_ENABLED=true.');
+      }
+
+      this.from = from;
+    } else {
+      this.from = null;
+    }
   }
 
   async send(options: EmailMessageOptions) {
+    this.ensureEnabled();
     this.validateRecipients(options.to);
 
     if (options.cc) {
@@ -48,8 +62,13 @@ export class EmailService {
       );
     }
 
+    const from = this.from;
+    if (!from) {
+      throw new ServiceUnavailableException('Email sender is not configured.');
+    }
+
     return this.transport.send({
-      from: this.from,
+      from,
       to: options.to,
       subject: options.subject,
       text: options.text,
@@ -63,6 +82,8 @@ export class EmailService {
   async sendTemplate<T extends SendTemplateEmailOptions['template']>(
     options: SendTemplateEmailOptions<T>,
   ) {
+    this.ensureEnabled();
+
     const rendered = this.templateService.render(
       options.template,
       options.context,
@@ -75,6 +96,14 @@ export class EmailService {
       replyTo: options.replyTo,
       ...rendered,
     });
+  }
+
+  private ensureEnabled(): void {
+    if (!this.transport.isEnabled()) {
+      throw new ServiceUnavailableException(
+        'Email sending is disabled. Set EMAIL_ENABLED=true to enable it.',
+      );
+    }
   }
 
   private validateRecipients(recipients: EmailRecipient): void {

@@ -108,6 +108,7 @@ The Email module provides a reusable email delivery abstraction that can be inje
 - **Multiple Recipients**: Supports individual and multiple recipients, including CC and BCC.
 - **Configuration Validation**: Validates SMTP settings and recipient addresses.
 - **Startup Verification**: Verifies the SMTP connection during application initialization.
+- **Optional Delivery**: `EMAIL_ENABLED` defaults to enabled in development and disabled in production; disabled email does not require SMTP configuration.
 - **Provider Independence**: Business modules depend on `EmailService`, not directly on Nodemailer, Mailpit, or Mailtrap.
 
 The `EmailModule` exports `EmailService` so other modules can import it and send emails through dependency injection.
@@ -140,7 +141,7 @@ Mailpit allows developers to inspect email recipients, subjects, HTML content, a
 
 #### Production Email Delivery
 
-Mailpit is not included in the production Docker Compose configuration. Production deployments should configure a real SMTP provider, such as Mailtrap, using the same SMTP environment variables.
+Mailpit is not included in the production Docker Compose configuration. Production deployments without an SMTP provider can set `EMAIL_ENABLED=false` (the default when `NODE_ENV=production`). To enable delivery, set `EMAIL_ENABLED=true` and configure the SMTP environment variables below.
 
 This keeps business email logic independent of the email provider.
 
@@ -176,6 +177,7 @@ The API reads environment variables from the root `.env` file.
 | `JWT_EXPIRES_IN`           | JWT token expiration timeframe                          | `1h`                                          |
 | `REFRESH_TOKEN_SECRET`     | Secret key used to sign and verify refresh tokens       | `your-refresh-token-secret`                   |
 | `REFRESH_TOKEN_EXPIRES_IN` | Refresh token expiration timeframe                      | `1h`                                          |
+| `EMAIL_ENABLED`            | Enable or disable email delivery                        | `true` in development / `false` in production |
 | `SMTP_HOST`                | SMTP server hostname                                    | `mailpit` (Docker) / `localhost` (native)     |
 | `SMTP_PORT`                | SMTP server port                                        | `1025` (Mailpit) / `587` (Mailtrap)           |
 | `SMTP_SECURE`              | Enable secure SMTP connection                           | `false`                                       |
@@ -247,6 +249,7 @@ Run these scripts from the repository root using `pnpm --filter api <command>` o
    POSTGRES_HOST=localhost
    MINIO_ENDPOINT=localhost
 
+   EMAIL_ENABLED=true
    SMTP_HOST=localhost
    SMTP_PORT=1025
    SMTP_SECURE=false

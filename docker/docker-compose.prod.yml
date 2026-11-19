@@ -42,13 +42,14 @@ services:
       MINIO_REGION: ${MINIO_REGION:-us-east-1}
       MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT}
 
-      # Email - Mailtrap Transactional Stream
-      SMTP_HOST: ${SMTP_HOST:-live.smtp.mailtrap.io}
-      SMTP_PORT: ${SMTP_PORT:-587}
+      # Email is disabled until an SMTP provider is configured.
+      EMAIL_ENABLED: ${EMAIL_ENABLED:-false}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-}
       SMTP_SECURE: ${SMTP_SECURE:-false}
-      SMTP_USER: ${SMTP_USER:-api}
-      SMTP_PASSWORD: ${SMTP_PASSWORD:?SMTP_PASSWORD is required}
-      MAIL_FROM: ${MAIL_FROM:?MAIL_FROM is required}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-}
 
     depends_on:
       db:

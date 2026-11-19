@@ -1,4 +1,9 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleInit,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import nodemailer, { type SendMailOptions, type Transporter } from 'nodemailer';
 
@@ -7,14 +12,27 @@ import { EMAIL_CONFIG } from './email.constants.js';
 @Injectable()
 export class EmailTransport implements OnModuleInit {
   private readonly logger = new Logger(EmailTransport.name);
-  private readonly transporter: Transporter;
+  private readonly enabled: boolean;
+  private readonly transporter: Transporter | null;
 
   constructor(private readonly configService: ConfigService) {
-    const host = this.configService.getOrThrow<string>(EMAIL_CONFIG.HOST);
+    this.enabled = this.resolveEnabled();
 
-    const port = Number(
-      this.configService.getOrThrow<string>(EMAIL_CONFIG.PORT),
-    );
+    if (!this.enabled) {
+      this.transporter = null;
+      return;
+    }
+
+    const host = this.configService.get<string>(EMAIL_CONFIG.HOST);
+    if (!host?.trim()) {
+      throw new Error('SMTP_HOST is required when EMAIL_ENABLED=true.');
+    }
+
+    const portValue = this.configService.get<string>(EMAIL_CONFIG.PORT);
+    if (!portValue?.trim()) {
+      throw new Error('SMTP_PORT is required when EMAIL_ENABLED=true.');
+    }
+    const port = Number(portValue);
 
     const secureValue = this.configService.get<string>(
       EMAIL_CONFIG.SECURE,
@@ -52,7 +70,16 @@ export class EmailTransport implements OnModuleInit {
     });
   }
 
+  isEnabled(): boolean {
+    return this.enabled;
+  }
+
   async onModuleInit(): Promise<void> {
+    if (!this.transporter) {
+      this.logger.log('Email sending is disabled.');
+      return;
+    }
+
     try {
       await this.transporter.verify();
 
@@ -67,6 +94,12 @@ export class EmailTransport implements OnModuleInit {
   }
 
   async send(options: SendMailOptions) {
+    if (!this.transporter) {
+      throw new ServiceUnavailableException(
+        'Email sending is disabled. Set EMAIL_ENABLED=true to enable it.',
+      );
+    }
+
     try {
       const result = await this.transporter.sendMail(options);
 
@@ -83,5 +116,30 @@ export class EmailTransport implements OnModuleInit {
 
       throw error;
     }
+  }
+
+  private resolveEnabled(): boolean {
+    const configuredValue = this.configService.get<string>(
+      EMAIL_CONFIG.ENABLED,
+    );
+
+    if (configuredValue === undefined) {
+      const nodeEnv =
+        this.configService.get<string>('NODE_ENV') ??
+        process.env.NODE_ENV ??
+        'development';
+
+      return nodeEnv.toLowerCase() !== 'production';
+    }
+
+    const normalizedValue = configuredValue.trim().toLowerCase();
+    if (normalizedValue === 'true') {
+      return true;
+    }
+    if (normalizedValue === 'false') {
+      return false;
+    }
+
+    throw new Error('EMAIL_ENABLED must be either "true" or "false".');
   }
 }
