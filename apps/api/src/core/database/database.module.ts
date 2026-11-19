@@ -1,6 +1,7 @@
 import { Logger, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import pg from 'pg';
 import { DatabaseService } from './database.service.js';
 
 const logger = new Logger('Database');
@@ -12,6 +13,7 @@ const logger = new Logger('Database');
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
+        driver: pg,
         ...(config.get<string>('DATABASE_URL')
           ? {
               url: config.getOrThrow<string>('DATABASE_URL'),
