@@ -3,7 +3,7 @@
   "services": {
     "api": {
       "root": "apps/api",
-      "framework": "vite"
+      "framework": "nestjs"
     },
     "web": {
       "root": "apps/web",
@@ -11,6 +11,12 @@
     }
   },
   "rewrites": [
+    {
+      "source": "/api",
+      "destination": {
+        "service": "api"
+      }
+    },
     {
       "source": "/api/(.*)",
       "destination": {

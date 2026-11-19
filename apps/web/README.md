@@ -109,11 +109,11 @@ route group in `router/AppRouter.tsx`.
 
 The web application is configured via environment variables defined in the root `.env` file (or passed via Docker):
 
-| Variable              | Description                                             | Default                 |
-| :-------------------- | :------------------------------------------------------ | :---------------------- |
-| `WEB_PORT`            | Port exposed by the web server container/process        | `3000`                  |
-| `NEXT_PUBLIC_API_URL` | Public URL endpoint for backend REST API calls          | `http://localhost:3001` |
-| `NODE_ENV`            | Application environment (`development` \| `production`) | `development`           |
+| Variable              | Description                                             | Default                     |
+| :-------------------- | :------------------------------------------------------ | :-------------------------- |
+| `WEB_PORT`            | Port exposed by the web server container/process        | `3000`                      |
+| `NEXT_PUBLIC_API_URL` | Public URL endpoint for backend REST API calls          | `http://localhost:3001/api` |
+| `NODE_ENV`            | Application environment (`development` \| `production`) | `development`               |
 
 ---
 
