@@ -9,7 +9,7 @@ async function bootstrap() {
     instrument: ObserveInstrument,
   });
   app.setGlobalPrefix('api');
-  const corsOrigins = (process.env.CORS_ORIGINS ?? '')
+  const corsOrigins = (process.env.CORS_ORIGINS ?? '*')
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean);
