@@ -43,6 +43,9 @@
     "tsconfig-paths": "^4.2.0"
   },
   "dependencies": {
+    "@neon/config": "^1.14.3",
+    "@neon/env": "^2.1.6",
+    "@neondatabase/serverless": "^1.2.1",
     "@nestjs/typeorm": "^12.0.3",
     "pg": "^8.23.1",
     "typeorm": "^1.1.2"
