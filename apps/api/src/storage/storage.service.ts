@@ -54,6 +54,8 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
       )
     : null;
 
+  private bucketInitialization: Promise<void> | null = null;
+
   private readonly maxFileSize = 5 * 1024 * 1024;
 
   private readonly allowedMimeTypes = new Map([
@@ -63,13 +65,15 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
     ['image/gif', '.gif'],
   ]);
 
-  async onModuleInit(): Promise<void> {
+  onModuleInit(): void {
     if (!this.config.enabled) {
       this.logger.log('Storage is disabled.');
       return;
     }
 
-    await this.initializeBucket();
+    this.logger.log(
+      'Storage is enabled; bucket initialization is deferred until the first upload.',
+    );
   }
 
   onModuleDestroy(): void {
@@ -187,6 +191,8 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
     if (!folder || !/^[a-zA-Z0-9_-]+$/.test(folder)) {
       throw new BadRequestException('Invalid storage folder.');
     }
+
+    await this.ensureBucketInitialized();
 
     const key = `${folder}/${randomUUID()}${extension}`;
 
@@ -311,5 +317,10 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
     }
 
     return this.publicClient;
+  }
+
+  private async ensureBucketInitialized(): Promise<void> {
+    this.bucketInitialization ??= this.initializeBucket();
+    await this.bucketInitialization;
   }
 }

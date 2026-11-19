@@ -74,23 +74,15 @@ export class EmailTransport implements OnModuleInit {
     return this.enabled;
   }
 
-  async onModuleInit(): Promise<void> {
+  onModuleInit(): void {
     if (!this.transporter) {
       this.logger.log('Email sending is disabled.');
       return;
     }
 
-    try {
-      await this.transporter.verify();
-
-      this.logger.log('SMTP connection verified successfully.');
-    } catch (error) {
-      this.logger.warn(
-        'SMTP server is unavailable. The API will continue starting.',
-      );
-
-      this.logger.debug(error instanceof Error ? error.message : String(error));
-    }
+    this.logger.log(
+      'Email sending is enabled; SMTP connectivity will be checked when sending.',
+    );
   }
 
   async send(options: SendMailOptions) {
