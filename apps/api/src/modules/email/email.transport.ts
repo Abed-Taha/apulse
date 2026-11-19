@@ -58,12 +58,11 @@ export class EmailTransport implements OnModuleInit {
 
       this.logger.log('SMTP connection verified successfully.');
     } catch (error) {
-      this.logger.error(
-        'Failed to verify SMTP connection.',
-        error instanceof Error ? error.stack : undefined,
+      this.logger.warn(
+        'SMTP server is unavailable. The API will continue starting.',
       );
 
-      throw new Error('SMTP connection verification failed.');
+      this.logger.debug(error instanceof Error ? error.message : String(error));
     }
   }
 
