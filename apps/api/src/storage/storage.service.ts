@@ -14,10 +14,12 @@ import {
   DeleteObjectCommand,
   HeadObjectCommand,
   GetObjectCommand,
+  S3ServiceException,
 } from '@aws-sdk/client-s3';
 
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'node:crypto';
+
 import { createStorageClient, getStorageConfig } from './storage.config.js';
 
 export interface UploadFileOptions {
@@ -39,10 +41,8 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
 
   private readonly config = getStorageConfig();
 
-  // Internal client: API container -> MinIO container.
   private readonly client = createStorageClient(this.config);
 
-  // Public client: used to generate URLs accessible by browsers.
   private readonly publicClient = createStorageClient(
     this.config,
     this.config.publicEndpoint.replace(/\/+$/, ''),
@@ -50,7 +50,11 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
 
   private readonly maxFileSize = 5 * 1024 * 1024;
 
-  private readonly allowedMimeTypes = new Map([
+  private readonly maxInitializationAttempts = 3;
+
+  private readonly retryDelay = 2000;
+
+  private readonly allowedMimeTypes = new Map<string, string>([
     ['image/jpeg', '.jpg'],
     ['image/png', '.png'],
     ['image/webp', '.webp'],
@@ -67,15 +71,18 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * Check MinIO connection and initialize the bucket.
-   * Retry because MinIO may take longer to become ready.
+   * Initialize the storage bucket.
+   * Retry when the storage service is temporarily unavailable.
    */
 
   private async initializeBucket(): Promise<void> {
-    const maxAttempts = 3;
-    const retryDelay = 2000;
+    for (
+      let attempt = 1;
+      attempt <= this.maxInitializationAttempts;
+      attempt++
+    ) {
+      let initializationError: unknown;
 
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         await this.client.send(
           new HeadBucketCommand({
@@ -83,77 +90,58 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
           }),
         );
 
-        this.logger.log(`MinIO bucket "${this.config.bucket}" is ready.`);
-
+        this.logger.log(`Bucket "${this.config.bucket}" is ready.`);
         return;
-      } catch (error: any) {
-        let initializationError: any = error;
-        const statusCode = error.$metadata?.httpStatusCode;
+      } catch (error: unknown) {
+        initializationError = error;
+      }
 
-        // Create the bucket if it doesn't exist.
-        if (statusCode === 404 || error.name === 'NotFound') {
-          try {
-            await this.client.send(
-              new CreateBucketCommand({
-                Bucket: this.config.bucket,
-              }),
-            );
+      if (this.isNotFound(initializationError)) {
+        try {
+          await this.client.send(
+            new CreateBucketCommand({
+              Bucket: this.config.bucket,
+            }),
+          );
 
-            this.logger.log(`MinIO bucket "${this.config.bucket}" created.`);
-
+          this.logger.log(`Bucket "${this.config.bucket}" created.`);
+          return;
+        } catch (createError: unknown) {
+          if (this.isBucketAlreadyExists(createError)) {
+            this.logger.log(`Bucket "${this.config.bucket}" already exists.`);
             return;
-          } catch (createError: any) {
-            if (
-              createError.name === 'BucketAlreadyOwnedByYou' ||
-              createError.name === 'BucketAlreadyExists'
-            ) {
-              this.logger.log(
-                `MinIO bucket "${this.config.bucket}" already exists.`,
-              );
-              return;
-            }
-
-            initializationError = createError;
           }
+
+          initializationError = createError;
         }
+      }
 
-        // Don't retry permission errors.
-        if (
-          initializationError.$metadata?.httpStatusCode === 403 ||
-          initializationError.name === 'AccessDenied'
-        ) {
-          this.logger.warn(
-            'MinIO access denied. Storage functionality may be unavailable.',
-          );
-          return;
-        }
-
-        if (attempt === maxAttempts) {
-          this.logger.warn(
-            `Unable to initialize MinIO after ${maxAttempts} attempts. ` +
-              'The API will continue starting without storage availability.',
-          );
-
-          this.logger.debug(
-            initializationError instanceof Error
-              ? initializationError.message
-              : String(error),
-          );
-
-          return;
-        }
-
+      if (this.isAccessDenied(initializationError)) {
         this.logger.warn(
-          `MinIO initialization attempt ${attempt}/${maxAttempts} failed. Retrying...`,
+          'Storage access denied. Storage functionality may be unavailable.',
+        );
+        return;
+      }
+
+      if (attempt === this.maxInitializationAttempts) {
+        this.logger.warn(
+          `Unable to initialize storage after ${this.maxInitializationAttempts} attempts.`,
         );
 
-        await new Promise((resolve) => setTimeout(resolve, retryDelay));
+        this.logError('Storage initialization failed', initializationError);
+        return;
       }
+
+      this.logger.warn(
+        `Storage initialization attempt ${attempt}/${this.maxInitializationAttempts} failed. Retrying...`,
+      );
+
+      await this.delay(this.retryDelay);
     }
   }
 
   /**
-   * Upload an image to MinIO.
+   * Upload an image to storage.
    */
   async uploadFile(options: UploadFileOptions): Promise<UploadedFile> {
     const { buffer, mimeType, folder } = options;
@@ -196,22 +184,18 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
         mimeType,
         size: buffer.length,
       };
-    } catch (error) {
-      this.logger.error(
-        `Failed to delete file: ${key}`,
-        error instanceof Error ? error.stack : String(error),
-      );
-      throw error;
+    } catch (error: unknown) {
+      this.logError(`Failed to upload file: ${key}`, error);
+
+      throw new InternalServerErrorException('Unable to upload file.');
     }
   }
 
   /**
-   * Delete an image from MinIO.
+   * Delete an image from storage.
    */
   async deleteFile(key: string): Promise<void> {
-    if (!key?.trim()) {
-      throw new BadRequestException('File key is required.');
-    }
+    this.validateKey(key);
 
     try {
       await this.client.send(
@@ -222,11 +206,8 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
       );
 
       this.logger.log(`File deleted: ${key}`);
-    } catch (error) {
-      this.logger.error(
-        `Failed to delete file: ${key}`,
-        error instanceof Error ? error.stack : String(error),
-      );
+    } catch (error: unknown) {
+      this.logError(`Failed to delete file: ${key}`, error);
 
       throw new InternalServerErrorException('Unable to delete file.');
     }
@@ -236,23 +217,33 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
    * Generate a temporary URL accessible by the browser.
    */
   async getFileUrl(key: string, expiresIn = 3600): Promise<string> {
-    const command = new GetObjectCommand({
-      Bucket: this.config.bucket,
-      Key: key,
-    });
+    this.validateKey(key);
 
-    return getSignedUrl(this.publicClient, command, {
-      expiresIn,
-    });
+    if (!Number.isInteger(expiresIn) || expiresIn <= 0) {
+      throw new BadRequestException('Invalid URL expiration time.');
+    }
+
+    try {
+      const command = new GetObjectCommand({
+        Bucket: this.config.bucket,
+        Key: key,
+      });
+
+      return await getSignedUrl(this.publicClient, command, {
+        expiresIn,
+      });
+    } catch (error: unknown) {
+      this.logError(`Failed to generate file URL: ${key}`, error);
+
+      throw new InternalServerErrorException('Unable to generate file URL.');
+    }
   }
 
   /**
    * Check whether an object exists.
    */
   async fileExists(key: string): Promise<boolean> {
-    if (!key?.trim()) {
-      throw new BadRequestException('File key is required.');
-    }
+    this.validateKey(key);
 
     try {
       await this.client.send(
@@ -263,14 +254,12 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
       );
 
       return true;
-    } catch (error: any) {
-      if (
-        error.name === 'NotFound' ||
-        error.name === 'NoSuchKey' ||
-        error.$metadata?.httpStatusCode === 404
-      ) {
+    } catch (error: unknown) {
+      if (this.isNotFound(error)) {
         return false;
       }
+
+      this.logError(`Failed to check file existence: ${key}`, error);
 
       throw new InternalServerErrorException('Unable to check file existence.');
     }
@@ -278,5 +267,49 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
 
   getBucket(): string {
     return this.config.bucket;
+  }
+
+  private validateKey(key: string): void {
+    if (!key?.trim()) {
+      throw new BadRequestException('File key is required.');
+    }
+  }
+
+  private isNotFound(error: unknown): boolean {
+    if (!(error instanceof S3ServiceException)) {
+      return false;
+    }
+
+    return (
+      error.name === 'NotFound' ||
+      error.name === 'NoSuchKey' ||
+      error.$metadata.httpStatusCode === 404
+    );
+  }
+
+  private isAccessDenied(error: unknown): boolean {
+    return (
+      error instanceof S3ServiceException &&
+      (error.name === 'AccessDenied' || error.$metadata.httpStatusCode === 403)
+    );
+  }
+
+  private isBucketAlreadyExists(error: unknown): boolean {
+    return (
+      error instanceof S3ServiceException &&
+      (error.name === 'BucketAlreadyOwnedByYou' ||
+        error.name === 'BucketAlreadyExists')
+    );
+  }
+
+  private logError(message: string, error: unknown): void {
+    this.logger.error(
+      message,
+      error instanceof Error ? error.stack : String(error),
+    );
+  }
+
+  private delay(milliseconds: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, milliseconds));
   }
 }

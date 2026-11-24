@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "packageManager": "pnpm@11.20.0",
   "scripts": {
     "docker:dev": "docker compose --env-file .env.docker -f docker/docker-compose.dev.yml up --build",
     "docker:dev:start": "docker compose --env-file .env.docker -f docker/docker-compose.dev.yml up -d",
